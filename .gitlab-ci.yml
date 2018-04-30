@@ -1,0 +1,71 @@
+before_script:
+  - echo $ANSIBLE_VAULT_PASSWORD > ~/.ansible_appx_vault_pass.txt
+  - mkdir -p ~/.ssh
+  - chmod 700 ~/.ssh
+  #- echo $ANSIBLE_PRIVATE_KEY | tr '\r' '\n' > ~/.ssh/ansible_prod.pem
+  #- sed -i 's/^ *//' ~/.ssh/ansible_prod.pem
+  - chmod 600 ~/.ssh/ansible_prod.pem
+  - aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID --profile default
+  - aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY --profile default
+  - aws configure set region $AWS_REGION --profile default
+  - aws configure set format text --profile default
+
+stages:
+  - deploy
+
+
+deploy_to_dev:
+  stage: deploy
+  environment:
+    name: dev
+    url: https://www.dev.abc.com
+  script:
+    - chmod +x ./scripts/deploy.sh
+    - ./scripts/deploy.sh devaws dev
+  when: on_success
+  tags:
+    - aws dev
+  only:
+    - develop
+
+deploy_to_uat:
+  stage: deploy
+  environment:
+    name: uat
+    url: https://www.uat.abc.com
+  script:
+    - chmod +x ./scripts/deploy.sh
+    - ./scripts/deploy.sh qaaws uat
+  when: on_success
+  tags:
+    - aws dev
+  only:
+    - uat
+    
+deploy_to_preprod:
+  stage: deploy
+  environment:
+    name: preprod
+    url: https://www.preprod.abc.com
+  script:
+    - chmod +x ./scripts/deploy.sh
+    - ./scripts/deploy.sh preprodaws preprod
+  when: on_success
+  tags:
+    - aws dev
+  only:
+    - master
+
+deploy_to_prod:
+  stage: deploy
+  environment:
+    name: prod
+    url: https://www.abc.com
+  script:
+    - chmod +x ./scripts/deploy.sh
+    - ./scripts/deploy.sh prdaws prd
+  when: manual
+  tags:
+    - aws prd
+  only:
+    - tags
